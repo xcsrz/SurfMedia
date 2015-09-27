@@ -13,7 +13,7 @@ files:
 	@echo '	return' >> autoGenStaticFiles.go
 	@echo '}' >> autoGenStaticFiles.go
 	@echo 'var staticFiles = map[string][]byte{' >> autoGenStaticFiles.go
-	@for F in `cd statics && find . -type f | sed 's/^\.\///'`; do \
+	@for F in `cd statics && find . -type f | sed 's/^\.\///' | grep -v "\.git"`; do \
 		C=`base64 statics/$$F`; \
 		echo "\"$$F\": b64decode(\`$$C\`)," >> autoGenStaticFiles.go ; \
 	done

@@ -183,9 +183,9 @@ func wrapPage(output string, pageNum int) []byte {
 <html>
 <head>
 <title>SurfMedia</title>
-<link href="/static/prettyPhoto.css" rel="stylesheet">
+<link href="/static/prettyphoto/css/prettyPhoto.css" rel="stylesheet">
 <script type="text/javascript" src="/static/jquery.js"></script>
-<script type="text/javascript" src="/static/jquery.prettyPhoto.js"></script>
+<script type="text/javascript" src="/static/prettyphoto/js/jquery.prettyPhoto.js"></script>
 </head>
 <body>
 ` + pages + output + pages + `
