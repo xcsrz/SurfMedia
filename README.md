@@ -23,3 +23,10 @@
 ### Status
 * slow and clunky but otherwise functional
 * thinking the next step is to try the imagemagick library
+
+### Goals / Todos
+* maintain the build to a single distributable file
+* add command line flags to specify preferences (images per page, root directory, port number, etc)
+* make the port auto incrementing port so multiple instances can run simultaneously
+* syscall the opening of the url in the default browser (needs to be os specific - anyone have a windows machine?)
+* speed spreed speed: it does a quick job of creating the list of images, but browsing is still crazy slow
