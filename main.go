@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	PORT     = "8888"
-	VERBOSE  = true
-	pageSize = 100
+	PORT          = "8888"
+	VERBOSE       = true
+	thumbnailSize = 300
+	pageSize      = 100
 )
 
 var filetypes = map[string]string{}
@@ -128,19 +129,19 @@ func pageHandler(w http.ResponseWriter, r *http.Request) {
 		pageNum = 0
 	}
 	for i := (pageNum * pageSize); i < int(math.Min(float64(pageSize*(pageNum+1)), float64(len(files)))); i++ {
-		output += `<div style="display: inline; float: left; width: 200px; text-align: center">`
+		output += `<div class="thumbnail-block">`
 		if filetypes[files[i]] == "image" {
 			output += fmt.Sprintf(`
 				<a href="/file%s" rel="prettyPhoto[gallery]" title="%s">
-					<img src="/file%s" title="%d" style="max-height: 300px; max-width: 200px" />
-				</a>`, files[i], files[i], files[i], i)
+					<img src="/file%s" title="%d" style="max-height: %dpx; max-width: %dpx" />
+				</a>`, files[i], files[i], files[i], i, thumbnailSize, thumbnailSize)
 		} else if filetypes[files[i]] == "video" {
 			output += fmt.Sprintf(`
 				<a href="/file%s?custom=true" rel="prettyPhoto[gallery]" title="%s">
 					<img src="/static/video.png" width="120px" />
 				</a>`, files[i], files[i])
 		} else {
-			output += `<img src="/static/error.jpg" width="200px" />`
+			output += fmt.Sprintf(`<img src="/static/error.jpg" width="%dpx" />`, thumbnailSize)
 		}
 		output += `</div>`
 	}
@@ -170,8 +171,10 @@ func staticHandler() http.Handler {
 
 func serve() {
 	fs := noCacheHandler(http.FileServer(http.Dir(".")))
+
 	http.Handle("/file/", http.StripPrefix("/file/", fs))
 	http.HandleFunc("/page/", pageHandler)
+	http.Handle("/thumb/", http.StripPrefix("/thumb/", thumbnailHandler()))
 	http.Handle("/static/", http.StripPrefix("/static/", staticHandler()))
 	fmt.Println("Listening on port", PORT, " ...")
 	fmt.Println(http.ListenAndServe(":"+PORT, nil))
@@ -186,9 +189,40 @@ func wrapPage(output string, pageNum int) []byte {
 <link href="/static/prettyphoto/css/prettyPhoto.css" rel="stylesheet">
 <script type="text/javascript" src="/static/jquery.js"></script>
 <script type="text/javascript" src="/static/prettyphoto/js/jquery.prettyPhoto.js"></script>
+<style>
+.thumbnail-block {
+	display: inline;
+	float: left;
+	width: ` + strconv.Itoa(thumbnailSize) + `px;
+	height: ` + strconv.Itoa(thumbnailSize) + `px;
+	text-align: center;
+}
+.pagelink {
+	background-image: url(/static/emptydot.png);
+	color: #eee;
+}
+.pagelink, .pagejumplink {
+	background-repeat: no-repeat;
+	display: inline-block;
+	cursor: pointer;
+	width: 22px;
+	height: 22px;
+	text-align: centers;
+	padding: 0px;
+	margin: 0px;
+	font: 12px arial;
+	padding-top: 4px;
+}
+.pagelinkrow {
+	text-align: center;
+	clear: both;
+	padding: 0px;
+	margin: 0px;
+}
+</style>
 </head>
 <body>
-` + pages + output + pages + `
+` + pages + `<div style="text-align:center">` + output + `</div>` + pages + `
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function(){
     $("a[rel^='prettyPhoto']").prettyPhoto({social_tools: false, theme: 'dark_rounded', custom_markup: '<video src="{path}" style="max-width: 1000px;" controls >'});
@@ -201,11 +235,15 @@ func wrapPage(output string, pageNum int) []byte {
 
 func pageLinks(pageNum int) string {
 	var links []string
+	var numPages = int(math.Ceil(float64(len(files) / pageSize)))
 	if pageNum > 0 {
-		links = append(links, `<a href="?page=`+strconv.Itoa(pageNum-1)+`">Prev</a>`)
+		links = append(links, `<span class="pagejumplink" style="background-image: url(/static/prev.png);" onclick="location.href='?page=`+strconv.Itoa(pageNum-1)+`'">&nbsp;</span>`)
+	}
+	for i := 0; i <= numPages-1; i++ {
+		links = append(links, fmt.Sprintf(`<span class="pagelink" onclick="location.href='?page=`+strconv.Itoa(i)+`'">%d</span>`, i+1))
 	}
 	if ((pageNum + 1) * pageSize) < len(files) {
-		links = append(links, `<a href="?page=`+strconv.Itoa(pageNum+1)+`">Next</a>`)
+		links = append(links, `<span class="pagejumplink" style="background-image: url(/static/next.png);" onclick="location.href='?page=`+strconv.Itoa(pageNum+1)+`'">&nbsp;</span>`)
 	}
-	return `<div style="text-align: center; clear: both">` + strings.Join(links, "&nbsp;||&nbsp;") + ` Page ` + strconv.Itoa(pageNum) + ` of ` + strconv.Itoa(int(math.Ceil(float64(len(files)/pageSize)))) + `</div>`
+	return `<div class="pagelinkrow">` + strings.Join(links, "&nbsp;") + `</div><div style="text-align: center"> Page ` + strconv.Itoa(pageNum) + ` of ` + strconv.Itoa(numPages) + `</div>`
 }
